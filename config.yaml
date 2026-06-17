@@ -1,0 +1,54 @@
+# gold-signal-bot configuration.
+# SECRETS: prefer environment variables (see README) over committing them here.
+
+telegram:
+  # from https://my.telegram.org -> API development tools
+  api_id: 0                      # or set env TG_API_ID
+  api_hash: ""                   # or set env TG_API_HASH
+  # the channel that posts signals: @username, t.me/... link, or numeric id.
+  source_channel: "@GABFXARMY_CIRCLE"
+  session_name: "user"           # Telethon session file name
+
+bot:
+  # create with @BotFather; then DM your bot once so it can message you back.
+  token: ""                      # or set env BOT_TOKEN
+  owner_id: 0                    # your numeric Telegram id (set env OWNER_ID)
+
+mt5:
+  symbol: "XAUUSD"               # confirm exact symbol with your broker (XAUUSD.m, GOLD, etc.)
+  login: 0                       # or env MT5_LOGIN
+  password: ""                   # or env MT5_PASSWORD
+  server: ""                     # or env MT5_SERVER
+  terminal_path: ""              # path to terminal64.exe on Windows (blank = auto)
+
+risk:
+  risk_pct: 0.01                 # risk 1% of balance per signal (across all TP legs)
+  contract_size: 100.0           # XAUUSD: 100 oz per 1.0 lot
+  min_lot: 0.01
+  max_lot: 5.0
+  lot_step: 0.01
+  slippage_points: 20
+  magic: 778899                  # tags orders so the bot only manages its own
+
+safety:
+  dry_run: true                  # TRUE = never send real orders (logs only). Flip on VPS when ready.
+  demo_balance: 10000.0          # balance used for sizing in dry-run
+  max_open_positions: 6
+  daily_loss_limit: 300.0        # halt new trades once this account-currency loss is realized today
+  confirm_timeout_sec: 300       # auto-cancel a confirmation card after 5 min
+
+manage:                          # post-fill SL management (break-even + trailing)
+  enabled: true
+  poll_sec: 5                    # how often to re-check open positions
+  breakeven:
+    enabled: true
+    offset: 1.0                  # when price hits TP1, move SL to entry ± this (price units) to lock a sliver
+  trailing:
+    enabled: true
+    start: 5.0                   # begin trailing once in profit by this many price units
+    distance: 3.0                # keep SL this far behind the best price
+    step: 0.5                    # only modify SL when improvement >= this (debounce)
+
+llm:
+  enabled: false                 # regex-only by default; enable for wording-drift robustness
+  model: "claude-haiku-4-5-20251001"   # needs ANTHROPIC_API_KEY in env

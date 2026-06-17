@@ -1,0 +1,12 @@
+*.session
+*.session-journal
+.state.json
+STOP
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+# keep real secrets out of git — use env vars
+config.local.yaml
+.env

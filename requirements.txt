@@ -1,0 +1,7 @@
+telethon>=1.36
+PyYAML>=6.0
+# Windows only — the MT5 terminal bridge. pip will skip/ fail on mac; that's fine
+# for dry-run development. Install it on the Windows VPS.
+MetaTrader5>=5.0.45 ; platform_system == "Windows"
+# optional LLM fallback parser
+anthropic>=0.40 ; extra == "llm"
