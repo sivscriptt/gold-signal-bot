@@ -1,158 +1,106 @@
 # Windows Setup — gold-signal-bot
 
-Step-by-step to run the bot on a Windows laptop. The bot is already built; this
-is just installing it and adding two Telegram values. Mostly double-clicking.
+The bot is fully built and all your logins are already filled in. This is just
+getting it running on the Windows laptop. Mostly double-clicking.
 
-> The MetaTrader 5 terminal **must run on this same laptop** — the bot talks to
-> it locally. Keep the laptop on while the bot is running.
+> MetaTrader 5 must run on the **same laptop** as the bot. Keep the laptop on
+> while the bot runs.
 
 ---
 
-## Step 1 — Copy the project folder to Windows
+## Step 1 — Copy the folder to Windows
 
-The project lives on the Mac at `~/Desktop/gold-signal-bot`. Move the **whole
-folder** to the Windows laptop (Desktop is fine).
+Copy the whole `gold-signal-bot` folder from the Mac to the Windows Desktop
+(zip it, send via USB/Drive, unzip on Windows).
 
-- Easiest: zip it on the Mac (right-click → Compress), transfer via Google Drive
-  / USB stick, then unzip on Windows.
-- The `.env` and `config.yaml` files **must** come along — they hold your
-  settings and tokens. Zipping the whole folder includes them.
-- Delete the `.venv` folder before zipping (it doesn't work across Mac↔Windows;
-  `setup_windows.bat` rebuilds it). If you forget, no harm — just re-run setup.
+- Keep the `.env` file inside it — it holds all your logins (already filled in).
+- Delete the `.venv` folder before copying if it's there (Windows rebuilds it).
+
+> Don't use `git clone` for this — the clone won't include `.env`, and you'd have
+> to re-enter all the logins. Copy the folder instead.
 
 ---
 
 ## Step 2 — Install Python
 
-1. Download Python 3.11 or newer: https://www.python.org/downloads/
-2. Run the installer.
-3. **On the first screen, tick "Add python.exe to PATH"** ← easy to miss, but required.
-4. Click Install.
+1. Get Python 3.11+ : https://www.python.org/downloads/
+2. Run it and **tick "Add python.exe to PATH"** on the first screen. Install.
 
 ---
 
-## Step 3 — Install / log into MetaTrader 5
+## Step 3 — Open MetaTrader 5
 
-1. If MT5 isn't installed, get it from your broker (or https://www.metatrader5.com).
-2. Log into the demo account: **File → Login to Trade Account**, using the
-   Login / Password / Server from your MT5 registration. These are the same
-   values stored in your `.env` file (`MT5_LOGIN`, `MT5_PASSWORD`, `MT5_SERVER`).
-3. Click the **Algo Trading** button in the toolbar so it is **green/on (NOT red)**.
-   Orders are rejected when it's off.
+1. Open MT5 and log into your demo account (the login/server are in your `.env`).
+2. Click the **Algo Trading** button in the toolbar so it's **green (not red)**.
 
 ---
 
-## Step 4 — Run setup (double-click)
+## Step 4 — Double-click `setup_windows.bat`
 
-Open the `gold-signal-bot` folder and **double-click `setup_windows.bat`**.
+Installs everything. Wait for **"Setup complete."**
 
-It creates a virtual environment and installs everything (including the
-Windows-only `MetaTrader5` package). Wait until it prints **"Setup complete."**
-
-> If it says "Python not found", Python wasn't added to PATH in Step 2 — reinstall
-> Python with the PATH box ticked, then run `setup_windows.bat` again.
+> "Python not found"? Reinstall Python with "Add to PATH" ticked, then try again.
 
 ---
 
-## Step 5 — Add your Telegram API values
+## Step 5 — Double-click `check.bat`
 
-These are the only two things still missing.
+Checks the broker connection, gold symbol, and price. **Places no orders.**
 
-1. Go to https://my.telegram.org and log in with your phone number.
-2. Click **API development tools** → create an app (any name/short-name).
-3. Copy the **api_id** and **api_hash** it shows you.
-4. Open the `.env` file in the project folder (right-click → Open with → Notepad)
-   and fill in these two lines:
-   ```
-   TG_API_ID=12345678
-   TG_API_HASH=abc123def456...
-   ```
-5. Save and close. (Bot token, your Telegram ID, and MT5 login are already set.)
+If it says gold is named something other than `XAUUSD` (e.g. `XAUUSD.m` or
+`GOLD`), open `config.yaml`, change the `symbol:` line to that name, and save.
 
 ---
 
-## Step 6 — Verify the broker (double-click `check.bat`)
+## Step 6 — Double-click `run.bat` (dry-run test)
 
-**Double-click `check.bat`.** This places **no orders** — it only checks:
-
-- the demo account connects,
-- your gold symbol exists and is tradable,
-- a live price,
-- a sample position size against your balance.
-
-**If it reports the gold symbol is named something other than `XAUUSD`**
-(MetaQuotes-Demo sometimes uses `XAUUSD.m`, `GOLD`, etc.):
-open `config.yaml`, find the line `symbol: "XAUUSD"`, and change it to exactly
-what `check.bat` reported. Save.
+- First time only: enter your **phone number** and the **code** Telegram sends you.
+- You'll get a **🟢 up** message from your bot.
+- Still in dry-run: signals show as ✅/❌ cards, but Approve only **logs** the
+  trade — no real order yet. Watch a few signals to confirm it looks right.
 
 ---
 
-## Step 7 — Start the bot in DRY-RUN (double-click `run.bat`)
+## Step 7 — Go live on the DEMO account
 
-**Double-click `run.bat`.**
+1. Open `config.yaml`, change `dry_run: true` to **`dry_run: false`**, save.
+2. Double-click `run.bat` again.
 
-- The **first time**, it asks for your **phone number** and a **login code**
-  Telegram sends you (one-time, so it can read the channel as you).
-- You'll get a **🟢 up** message from your bot in Telegram.
-- It is still in **dry-run**: when a GABFXARMY signal arrives you get the
-  ✅ Approve / ❌ Reject card, but tapping Approve only **logs** the trade — it
-  does NOT send a real order yet.
-
-Watch a few signals to confirm the parsing and the cards look correct.
-
----
-
-## Step 8 — Go live on the DEMO account
-
-When you're happy with dry-run:
-
-1. Open `config.yaml`.
-2. Change `dry_run: true` to **`dry_run: false`**. Save.
-3. Double-click `run.bat` again.
-
-Now tapping **Approve** actually places the trade on your **demo** account with
-SL and TP, and break-even + trailing-stop management begins automatically.
-
-> Only consider real money after the demo behaves correctly for several days,
-> and start with a very small `risk_pct`.
+Now Approve actually places the demo trade with SL/TP, and break-even + trailing
+stop run automatically. Use real money only after the demo works well for days.
 
 ---
 
 ## Everyday use
 
-- **Start the bot:** double-click `run.bat`.
-- **Stop the bot:** close the black window — OR create an empty file named `STOP`
-  in the folder (instant kill switch; delete it to allow trading again).
-- **Change risk / break-even / trailing settings:** edit `config.yaml`, restart `run.bat`.
+- **Start:** double-click `run.bat`
+- **Stop:** close the black window, or make an empty file named `STOP` in the
+  folder (instant halt; delete it to resume)
+- **Change settings:** edit `config.yaml`, restart `run.bat`
 
 ---
 
-## Safety features (already built in)
+## Already protecting you
 
-- **Confirm-first:** nothing trades without you tapping ✅.
-- **Kill switch:** a file named `STOP` halts all execution immediately.
-- **Daily loss limit:** once today's realized loss hits `daily_loss_limit` (in
-  `config.yaml`), no new trades are placed until tomorrow.
-- **Staleness guard:** signals where price already ran past TP1 are skipped.
-- **Sanity check:** a garbled signal (SL/TP on the wrong side) is rejected, never traded.
+- **Confirm-first** — nothing trades without your ✅
+- **STOP file** — instant kill switch
+- **Daily loss limit** — stops new trades after a set loss for the day
+- **Sanity + staleness checks** — bad or too-late signals are skipped
 
 ---
 
-## Troubleshooting
+## If something's off
 
-| Symptom | Fix |
+| Problem | Fix |
 |---|---|
-| "Python not found" | Reinstall Python with **"Add to PATH"** ticked (Step 2). |
-| `check.bat`: initialize failed | MT5 not open / wrong login / **Algo Trading off** (must be green). |
-| `check.bat`: symbol not found | Set `symbol:` in `config.yaml` to the name it lists. |
-| No 🟢 message in Telegram | Send your bot any message once so it can DM you; check `BOT_TOKEN`/`OWNER_ID` in `.env`. |
-| Cards arrive but Approve does nothing visible | You're in dry-run — that's expected; it logs only. Flip `dry_run: false` for demo trades. |
-| Orders rejected when live | Algo Trading off, wrong symbol, or market closed (gold trades ~Sun–Fri). |
+| "Python not found" | Reinstall Python with **Add to PATH** ticked |
+| `check.bat` connection fails | MT5 not open, or **Algo Trading is off** (must be green) |
+| `check.bat` symbol not found | Set `symbol:` in `config.yaml` to the name it shows |
+| No 🟢 message | Send your bot any message once so it can DM you |
+| Bot runs but no signal cards | Wrong channel name — tell me, I'll help find the exact one |
+| Approve does nothing visible | You're in dry-run (expected). Set `dry_run: false` for demo trades |
 
 ---
 
-## Security reminder
-
-`BOT_TOKEN` was shared in chat during setup — rotate it: message **@BotFather**
-→ `/revoke` → pick the bot → copy the new token into `.env`. Never commit `.env`
-or share it.
+**Security:** rotate the bot token (@BotFather → `/revoke`) since it was shared in
+chat, and paste the new one into `.env`. Never share or commit `.env`.
