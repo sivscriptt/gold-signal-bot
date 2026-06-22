@@ -61,12 +61,17 @@ class Executor:
             log.info("DRY-RUN executor (MT5 %s, dry_run=%s)",
                      "present" if HAVE_MT5 else "absent", self.cfg.dry_run)
             return True
-        if not mt5.initialize(
+        # Only pass `path` when set. MT5 rejects path=None with
+        # (-2, 'Invalid "path" argument'); omitting it lets MT5 auto-detect
+        # the already-running terminal.
+        init_kwargs = dict(
             login=self.cfg.mt5_login,
             password=self.cfg.mt5_password,
             server=self.cfg.mt5_server,
-            path=self.cfg.mt5_terminal_path or None,
-        ):
+        )
+        if self.cfg.mt5_terminal_path:
+            init_kwargs["path"] = self.cfg.mt5_terminal_path
+        if not mt5.initialize(**init_kwargs):
             log.error("mt5.initialize failed: %s", mt5.last_error())
             return False
         self._connected = True
@@ -121,6 +126,19 @@ class Executor:
             return False, f"price {px} already at/above TP1 {tp1} — too late"
         return True, f"price {px} ok vs TP1 {tp1}"
 
+    def _filling_mode(self):
+        """Pick an order-filling mode the symbol actually supports.
+        MetaQuotes-Demo gold typically rejects IOC; hardcoding it makes live
+        order_send fail with retcode 10030. symbol_info.filling_mode is a
+        bitmask of the allowed modes."""
+        info = mt5.symbol_info(self.cfg.symbol)
+        allowed = getattr(info, "filling_mode", 0) if info else 0
+        if allowed & mt5.SYMBOL_FILLING_FOK:
+            return mt5.ORDER_FILLING_FOK
+        if allowed & mt5.SYMBOL_FILLING_IOC:
+            return mt5.ORDER_FILLING_IOC
+        return mt5.ORDER_FILLING_RETURN
+
     # ---- execution --------------------------------------------------------
     def execute(self, orders: list[Order]) -> ExecResult:
         if not self.live:
@@ -136,6 +154,7 @@ class Executor:
         placed: list[Order] = []
         tickets: list[int] = []
         order_type = mt5.ORDER_TYPE_SELL if orders[0].direction == "SELL" else mt5.ORDER_TYPE_BUY
+        filling = self._filling_mode()
         for o in orders:
             tick = mt5.symbol_info_tick(self.cfg.symbol)
             price = tick.bid if o.direction == "SELL" else tick.ask
@@ -151,7 +170,7 @@ class Executor:
                 "magic": self.cfg.magic,
                 "comment": "gold-signal-bot",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": filling,
             }
             res = mt5.order_send(req)
             if res.retcode != mt5.TRADE_RETCODE_DONE:

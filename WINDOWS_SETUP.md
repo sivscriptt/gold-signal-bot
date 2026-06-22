@@ -14,7 +14,8 @@ Copy the whole `gold-signal-bot` folder from the Mac to the Windows Desktop
 (zip it, send via USB/Drive, unzip on Windows).
 
 - Keep the `.env` file inside it — it holds all your logins (already filled in).
-- Delete the `.venv` folder before copying if it's there (Windows rebuilds it).
+- **Delete the `.venv` folder before copying** — a venv built on the Mac will not
+  work on Windows. (If you forget, `setup_windows.bat` now deletes it for you.)
 
 > Don't use `git clone` for this — the clone won't include `.env`, and you'd have
 > to re-enter all the logins. Copy the folder instead.
@@ -94,6 +95,7 @@ stop run automatically. Use real money only after the demo works well for days.
 | Problem | Fix |
 |---|---|
 | "Python not found" | Reinstall Python with **Add to PATH** ticked |
+| `...CommandLineTools...python.exe` not found | Mac `.venv` got copied over. Delete the `.venv` folder, re-run `setup_windows.bat` |
 | `check.bat` connection fails | MT5 not open, or **Algo Trading is off** (must be green) |
 | `check.bat` symbol not found | Set `symbol:` in `config.yaml` to the name it shows |
 | No 🟢 message | Send your bot any message once so it can DM you |

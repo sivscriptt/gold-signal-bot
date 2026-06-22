@@ -50,8 +50,14 @@ def find_gold(symbol):
 def main():
     cfg = Config.load("config.yaml")
     print(f"connecting to {cfg.mt5_server} as {cfg.mt5_login} ...")
-    ok = mt5.initialize(login=cfg.mt5_login, password=cfg.mt5_password,
-                        server=cfg.mt5_server, path=cfg.mt5_terminal_path or None)
+    # Only pass `path` when it's set. MT5 rejects path=None with
+    # (-2, 'Invalid "path" argument'); omitting it lets MT5 auto-detect
+    # the already-running terminal.
+    init_kwargs = dict(login=cfg.mt5_login, password=cfg.mt5_password,
+                       server=cfg.mt5_server)
+    if cfg.mt5_terminal_path:
+        init_kwargs["path"] = cfg.mt5_terminal_path
+    ok = mt5.initialize(**init_kwargs)
     if not ok:
         print(f"✗ initialize failed: {mt5.last_error()}")
         print("  → check MT5 terminal is running, login/password/server correct, "

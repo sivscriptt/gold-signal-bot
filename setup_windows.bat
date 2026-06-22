@@ -16,6 +16,9 @@ if errorlevel 1 (
 )
 
 echo [1/3] Creating virtual environment (.venv) ...
+REM Wipe any existing .venv first - a venv copied from another machine
+REM (e.g. a Mac) is not portable and will fail with a bad python path.
+if exist .venv rmdir /s /q .venv
 py -3 -m venv .venv
 
 echo [2/3] Upgrading pip ...
