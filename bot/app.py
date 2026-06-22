@@ -16,6 +16,7 @@ import asyncio
 import logging
 
 from telethon import TelegramClient, Button, events
+from telethon.tl.types import InputPeerUser
 
 from .config import Config
 from .executor import Executor, Order
@@ -52,6 +53,11 @@ class TradingApp:
             from .llm import make_fallback
             self.llm = make_fallback(cfg.anthropic_model)
         self.pending: dict[str, list[Order]] = {}
+        # A bot can DM a user only after that user has /start-ed it. Addressing
+        # the user as InputPeerUser(id, 0) lets the bot send by id without a
+        # cached entity (which a fresh bot session lacks) — avoids the
+        # "Could not find the input entity for PeerUser" ValueError.
+        self.owner = InputPeerUser(cfg.owner_id, 0)
 
     # ---------------------------------------------------------------- run
     async def start(self):
@@ -66,9 +72,14 @@ class TradingApp:
         if self.cfg.manage_enabled:
             asyncio.create_task(self._manage_loop())
 
-        await self.bot.send_message(self.cfg.owner_id,
-                                     f"🟢 gold-signal-bot up. dry_run={self.cfg.dry_run}. "
-                                     f"manage={self.cfg.manage_enabled}. `touch STOP` to halt.")
+        try:
+            await self.bot.send_message(
+                self.owner,
+                f"🟢 gold-signal-bot up. dry_run={self.cfg.dry_run}. "
+                f"manage={self.cfg.manage_enabled}. `touch STOP` to halt.")
+        except Exception as e:
+            log.warning("could not DM owner on startup (%s). Open your bot in "
+                        "Telegram and press Start, then it will reach you.", e)
         log.info("listening on %s", self.cfg.source_channel)
         await self.user.run_until_disconnected()
 
@@ -112,7 +123,7 @@ class TradingApp:
         key = str(mid)
         self.pending[key] = orders
         await self.bot.send_message(
-            self.cfg.owner_id,
+            self.owner,
             _fmt_card(sig, orders, why),
             parse_mode="md",
             buttons=[[Button.inline("✅ Approve", f"ok:{key}".encode()),
@@ -173,6 +184,6 @@ class TradingApp:
 
     async def _notify(self, msg: str):
         try:
-            await self.bot.send_message(self.cfg.owner_id, msg)
+            await self.bot.send_message(self.owner, msg)
         except Exception as e:
             log.warning("notify failed: %s", e)
